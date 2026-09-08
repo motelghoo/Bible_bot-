@@ -1,7 +1,7 @@
-import requests, random, os
+import requests, random, os, time
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-CHANNEL_ID = "-1003949175068"
+CHANNEL_ID = os.getenv("CHANNEL_ID")
 
 verses = [
     {"text": "در دنيا برای شما زحمت خواهد بود، اما دل قوی داريد، زيرا من بر دنيا غالب آمده‌ام.", "addr": "یوحنا ۱۶:۳۳"},
@@ -11,10 +11,12 @@ verses = [
     {"text": "او به خستگان قوت می‌بخشد و ناتوانان را نیرو می‌افزاید.", "addr": "اشعیا ۴۰:۲۹"},
 ]
 
-chosen = random.choice(verses)
-message = f"✝️ آیه امروز\n\n«{chosen['text']}»\n\n— {chosen['addr']}"
-
-url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-resp = requests.post(url, json={"chat_id": CHANNEL_ID, "text": message})
-print(resp.text)
-print("SUCCESS" if resp.status_code==200 else "FAILED")
+# تست: 5 پیام هر 1 دقیقه
+for i in range(5):
+    chosen = random.choice(verses)
+    message = f"✝️ تست {i+1}/5\n\n«{chosen['text']}»\n\n— {chosen['addr']}"
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+    r = requests.post(url, json={"chat_id": CHANNEL_ID, "text": message})
+    print(f"Sent {i+1}: {r.text}")
+    if i < 4:
+        time.sleep(60)
