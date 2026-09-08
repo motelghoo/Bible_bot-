@@ -1,10 +1,11 @@
 import requests, random, os
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-CHANNEL_ID = os.getenv("CHANNEL_ID")
+# آیدی رو دستی گذاشتم تا ارور 404 حل بشه
+CHANNEL_ID = "@Testfhcr"
 
 print(f"BOT exists: {bool(BOT_TOKEN)}")
-print(f"CHANNEL_ID raw: '{CHANNEL_ID}'")
+print(f"CHANNEL_ID: {CHANNEL_ID}")
 
 verses = [
     {"text": "در دنيا برای شما زحمت خواهد بود، اما دل قوی داريد، زيرا من بر دنيا غالب آمده‌ام.", "addr": "یوحنا ۱۶:۳۳"},
@@ -17,10 +18,6 @@ verses = [
 chosen = random.choice(verses)
 message = f"✝️ آیه امروز\n\n«{chosen['text']}»\n\n— {chosen['addr']}"
 
-# تمیز کردن آیدی
-if CHANNEL_ID:
-    CHANNEL_ID = CHANNEL_ID.strip()
-
 url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
 print(f"Sending to: {CHANNEL_ID}")
 resp = requests.post(url, json={"chat_id": CHANNEL_ID, "text": message})
@@ -28,6 +25,6 @@ print(f"Telegram response: {resp.status_code}")
 print(f"Telegram body: {resp.text}")
 
 if resp.status_code != 200:
-    print("FAILED - check if bot is admin and CHANNEL_ID is correct")
+    print("FAILED")
 else:
-    print("SUCCESS")
+    print("SUCCESS - پیام رفت تو کانال!")
