@@ -1,19 +1,22 @@
 name: Daily Bible Verse
+
 on:
-  push:
-  workflow_dispatch:
   schedule:
-    - cron: '* * * * *'
+    - cron: '0 5 * * *'
+  workflow_dispatch:
+
 jobs:
-  send:
+  send-verses:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
         with:
           python-version: '3.10'
-      - run: pip install requests
-      - run: python ./main.py
-        env:
-          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
-          CHANNEL_ID: ${{ secrets.CHANNEL_ID }}
+      - run: pip install requests pytz
+      - run: python main.py
+      - run: sleep 300 && python main.py --psalm
+      - run: sleep 3600 && python main.py --main
+    env:
+      BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+      CHANNEL_ID: ${{ secrets.CHANNEL_ID }}
