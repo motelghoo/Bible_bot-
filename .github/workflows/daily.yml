@@ -1,22 +1,37 @@
-name: Daily Bible Verse
+name: Daily Verses - Farsi House
 
 on:
   schedule:
-    - cron: '0 5 * * *'
+    - cron: '0 7 * * *' # ساعت 7 UTC = ساعت 10:00 ترکیه / 10:30 ایران
   workflow_dispatch:
 
 jobs:
-  send-verses:
+  send:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - name: Setup Python
+        uses: actions/setup-python@v4
         with:
           python-version: '3.10'
-      - run: pip install requests pytz
-      - run: python main.py
-      - run: sleep 300 && python main.py --psalm
-      - run: sleep 3600 && python main.py --main
-    env:
-      BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
-      CHANNEL_ID: ${{ secrets.CHANNEL_ID }}
+      - name: Install
+        run: pip install requests pytz
+      - name: 10:00 - امثال روز
+        run: python main.py --proverbs
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          CHANNEL_ID: ${{ secrets.CHANNEL_ID }}
+      - name: Wait 5 min
+        run: sleep 300
+      - name: 10:05 - مزمور روز
+        run: python main.py --psalm
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          CHANNEL_ID: ${{ secrets.CHANNEL_ID }}
+      - name: Wait 30 min
+        run: sleep 1800
+      - name: 10:35 - آیه روز اصلی
+        run: python main.py --main
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          CHANNEL_ID: ${{ secrets.CHANNEL_ID }}
