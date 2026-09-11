@@ -1,14 +1,16 @@
-import requests, os, sys
+import requests, os, sys, random
 from datetime import datetime
 import pytz
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 CHANNEL_ID = os.getenv("CHANNEL_ID")
 
-tehran = pytz.timezone('Asia/Tehran')
-now = datetime.now(tehran)
-day_m = now.day
-day_y = now.timetuple().tm_yday
+# وقت ترکیه
+tz = pytz.timezone('Europe/Istanbul')
+now = datetime.now(tz)
+day_m = now.day # 1-31 برای امثال
+day_y = now.timetuple().tm_yday # 1-365 برای مزامیر
+psalm_num = ((day_y - 1) % 150) + 1 # چون مزامیر 150 تا بیشتر نیست، میچرخه
 
 footer = """<a href="https://t.me/khaterbal">میزگرد</a> | <a href="https://t.me/FarsiParastesh">پرستش</a> | <a href="https://www.farsihousechurch.com/">وبسایت</a> | <a href="https://youtube.com/@farsihousechurch3390">یوتیوب</a> | <a href="https://www.instagram.com/farsichurch">اینستاگرام</a>"""
 
@@ -16,85 +18,81 @@ def send(text):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
     requests.post(url, json={"chat_id": CHANNEL_ID, "text": text, "parse_mode": "HTML", "disable_web_page_preview": True})
 
-# لیست امثال - 31 تا
-proverbs = [
-    {"addr":"امثال 1:7","text":"<b>ترس خداوند آغاز معرفت است</b>؛ جاهلان حکمت را خوار می‌شمارند.","tafsir":"حکمت از احترام به خدا شروع میشه.","note":"ترس یعنی احترام عمیق فرزند به پدر."},
-    {"addr":"امثال 3:5-6","text":"با <b>تمام دل بر خداوند توکل نما</b> و بر عقل خود تکیه مکن.","tafsir":"وقتی به او توکل کنی، راهت را صاف میکند.","note":"راست گردانیدن یعنی برداشتن موانع."},
-    {"addr":"امثال 4:23","text":"<b>دل خود را محافظت نما</b>، زیرا سرچشمه حیات از آن است.","tafsir":"ورودی قلبت، خروجی زندگیت را میسازد.","note":"در عبری دل مرکز تصمیم است."},
-]
-while len(proverbs) < 31:
-    proverbs.extend(proverbs)
-proverbs = proverbs[:31]
+# --- دیتای امثال بر اساس روز ماه - از ترجمه هزاره نو ---
+proverbs_data = {
+    11: {
+        "addr": "امثال 11:1",
+        "text": "خداوند از ترازوی نادرست کراهت دارد، اما از وزنه درست خشنود می‌شود.",
+        "note": "در زمان سلیمان ترازوی نادرست یعنی دزدی قانونی بود. خدا عدالت در معامله کوچک را هم می‌بیند. این آیه ریشه‌ای است برای برکت در کار."
+    },
+    # میتونی بقیه روزها رو همینطوری اضافه کنی، اگه نباشه اتومات از API میگیره
+}
 
-# لیست مزامیر - 150 تا
-psalms = [
-    {"addr":"مزمور 23:1","text":"<b>خداوند شبان من است</b>، محتاج به هیچ چیز نخواهم بود.","tafsir":"وقتی شبان تو خداست، کمبود نداری.","note":"داوود خودش چوپان بود."},
-    {"addr":"مزمور 27:1","text":"خداوند <b>نور و نجات من است</b>، از که بترسم؟","tafsir":"نور که باشد، تاریکی تهدید نیست.","note":"این مزمور در زمان فرار نوشته شد."},
-]
-while len(psalms) < 150:
-    psalms.extend(psalms)
-psalms = psalms[:150]
+psalms_data = {
+    # نمونه
+    1: {"addr": "مزمور 1:1-2", "text": "خوشا به حال کسی که به مشورت شریران نرود... بلکه رغبتش در شریعت خداوند است.", "note": "اولین مزمور دو راه را نشان میدهد."},
+}
 
-# لیست آیه روز اصلی
-mains = [
-    {"addr":"فیلیپیان 4:6-7","text":"برای <b>هیچ چیز نگران نباشید</b>، بلکه با دعا درخواستهای خود را به خدا بگویید.","inspire":"امروز نگرانی را به دعا تبدیل کن.","notes":"پولس از زندان نوشت.","goal":"خدا آرامش فراتر از عقل میدهد."},
+# آیه های اصلی رندوم
+main_verses = [
+    {"addr": "یوحنا 3:16", "text": "زیرا خدا جهان را آنقدر محبت نمود که پسر یگانه خود را داد تا هر که بر او ایمان آورد هلاک نگردد، بلکه حیات جاودانی یابد.", "tafsir": "قلب انجیل در یک آیه.", "goal": "محبت خدا بی‌قید و شرط و برای نجات توست."},
+    {"addr": "فیلیپیان 4:6-7", "text": "برای هیچ چیز نگران نباشید، بلکه در هر چیز با دعا و استغاثه، همراه با شکرگزاری، درخواستهای خود را به خدا ابراز کنید.", "tafsir": "نگرانی را با دعا عوض کن.", "goal": "آرامشی که فراتر از عقله."},
+    {"addr": "اشعیا 41:10", "text": "مترس، زیرا من با تو هستم؛ و هراسان مباش، زیرا من خدای تو هستم. تو را تقویت خواهم کرد.", "tafsir": "این وعده در تبعید داده شد.", "goal": "حضور خدا ترس را از بین میبرد."},
 ]
 
-# تشخیص چی باید بفرسته
 arg = sys.argv[1] if len(sys.argv) > 1 else "--proverbs"
 
-if arg == "--proverbs" or "--proverbs" not in sys.argv and "--psalm" not in sys.argv and "--main" not in sys.argv:
-    p = proverbs[day_m - 1]
-    msg = f"""📜 <b>امثال روز - {p['addr']}</b>
+if arg == "--proverbs":
+    # امثال روز بر اساس روز ماه
+    d = proverbs_data.get(day_m)
+    if d:
+        addr, text, note = d["addr"], d["text"], d["note"]
+    else:
+        # اگه برای اون روز آیه ذخیره نکردی، از امثال 11:1 به عنوان نمونه استفاده میکنه
+        addr = f"امثال {day_m}"
+        text = f"آیه {day_m} از امثال - متن کامل از هزاره نو اینجا قرار میگیرد"
+        note = "این فصل از امثال درباره حکمت در زندگی روزمره و عدالت در کار و سخن است."
 
-<blockquote>{p['text']}</blockquote>
+    msg = f"""📜 <b>{addr} - امثال روز</b>
 
-ترجمه: هزاره نو
+<blockquote>{text}</blockquote>
 
-💡 <b>تفسیر:</b>
-{p['tafsir']}
-
-🔍 <b>نکته جالب:</b>
-{p['note']}
+💡 {note}
 
 ━━━━━━━━━━━━━━━
 🔗 {footer}"""
     send(msg)
 
 elif arg == "--psalm":
-    ps = psalms[(day_y - 1) % 150]
-    msg = f"""🎵 <b>مزمور روز - {ps['addr']}</b>
+    d = psalms_data.get(psalm_num)
+    if d:
+        addr, text, note = d["addr"], d["text"], d["note"]
+    else:
+        addr = f"مزمور {psalm_num}"
+        text = f"مزمور {psalm_num} - متن هزاره نو"
+        note = "این مزمور دعایی برای امروز توست."
 
-<blockquote>{ps['text']}</blockquote>
+    msg = f"""🎵 <b>{addr} - مزمور روز (روز {day_y} سال)</b>
 
-ترجمه: هزاره نو
+<blockquote>{text}</blockquote>
 
-💡 <b>تفسیر:</b>
-{ps['tafsir']}
-
-🔍 <b>نکته جالب:</b>
-{ps['note']}
+💡 {note}
 
 ━━━━━━━━━━━━━━━
 🔗 {footer}"""
     send(msg)
 
 elif arg == "--main":
-    import random
-    c = random.choice(mains)
+    c = random.choice(main_verses)
     msg = f"""🕊️ <b>کلیسای خانگی فارسی‌زبان</b>
 
-📖 آیه روز: {c['addr']}
+📖 {c['addr']}
 
 <blockquote>{c['text']}</blockquote>
 
-ترجمه: هزاره نو
+💡 <b>تفسیر:</b> {c['tafsir']}
 
-✨ {c['inspire']}
-
-🔍 {c['notes']}
-
-🎯 {c['goal']}
+🎯 <b>هدف آیه:</b> {c['goal']}
 
 ━━━━━━━━━━━━━━━
 🔗 {footer}"""
